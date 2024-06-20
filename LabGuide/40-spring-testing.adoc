@@ -1,0 +1,168 @@
+﻿
+= Spring Fundamentals, Testing
+:sectnums:
+
+A central mission of the Spring framework is to encourage and simplify automated testing.  When working with Spring, tests are first-class citizens of the development process, not afterthoughts.  
+
+In previous labs we used JUnit to test our Spring-based applications, but we did not take advantage of Spring's testing framework.  In this lab you will modify an existing project, *40-spring-testing*, to make full use of its testing capabilities.
+
+Within the codebase you will find ordered *TODO* comments that describe what actions to take for each step.  By finding all files containing *TODO*, and working on the steps in numeric order, it is possible to complete this exercise without looking at the instructions.  If you do need guidance, you can always look at these instructions for full information.  Just be sure to perform the *TODO* steps in order.
+
+Solution code is provided for you in a separate folder, so you can compare your work if needed.  For maximum benefit, try to complete the lab without looking at the solution.
+
+If you have time, there is an optional challenge working with Mockito, one of the most widely used testing frameworks in the Java space today, and a good skill for any Java developer to have.  
+
+== Open the project.
+
+==== Use your IDE to open `C:\LabFiles\40-spring-testing` (adjust this location as needed).
+
+==== TODO 01: Open `build.gradle` and add the Spring Test framework dependency.
+* Within the dependencies block, add a _testImplementation_ for *spring-test*.  It follows the same naming convention / version as the other Spring dependencies, so use them as a guide.
+* Save your work.  A properly behaving IDE _should_ recognize the change and update your project's configuration, but if it doesn't just restart.
+[,groovy]
+----
+dependencies {
+    // other dependencies
+    testImplementation 'org.springframework:spring-test:6.1.8'  
+    //  other dependencies
+}
+----
+
+== Refactoring the `RegisterTest` class
+
+==== TODO 02: Open `src/test/java/com.example.service.RegisterTest.java` and refactor the test class.
+. Add the `@SpringJUnitConfig(Config.class)` annotation to the class to enable Spring testing.
+    * This annotation is a combination of `@ExtendWith(SpringExtension.class)` and `@ContextConfiguration`.
+    * `@ContextConfiguration` specifies the configuration class to load the Spring application context, `Config.class` in this case.
+. Remove the `@BeforeAll` method.  Spring will load the `ApplicationContext` automatically when the test starts.
+. Remove the `static` modifier from the `register` field. (Spring performs dependency injection on objects, not classes).  Optionally remove the `private` modifier as well; it is not highly relevant for test classes.
+. Add an `@Autowired` annotation to the `register` field to inject the `Register` bean.
+[,java]
+----
+@SpringJUnitConfig(Config.class)
+public class RegisterTest {
+
+    @Autowired Register register;
+
+----
+
+==== Organize imports, save your work.  Run this test, it should pass.
+
+== Refactoring the `RegisterCompoundTest` class
+
+==== TODO-03:  Open `src/test/java/com.example.service.RegisterCompoundTest.java` and refactor the test class.
+. Add the `@SpringJUnitConfig(Config.class)` annotation to the class to enable Spring testing.
+. Add the `@ActiveProfiles("compound")` annotation to activate the "compound" profile.
+. Remove the `@BeforeAll` method.  Spring will load the `ApplicationContext` automatically when the test starts.
+. Remove the `static` modifier from the `register` field. (Spring dependency injects objects, not classes).  Optionally remove the `private` modifier as well; it is not highly relevant for test classes.
+. Add an `@Autowired` annotation to the `register` field to inject the `Register` bean.
+[,java]
+----
+@SpringJUnitConfig(Config.class)
+@ActiveProfiles("compound")
+public class RegisterCompoundTest {
+
+    @Autowired Register register;
+
+----
+
+==== Organize imports, save your work.  Run this test, it should pass.
+
+== OPTIONAL: Override properties used in tests
+
+Often during testing we wish to override properties obtained from configuration files, environment variables, or other sources.  Spring provides a way to do this using the `@TestPropertySource` annotation.
+
+==== TODO-04: Within `RegisterCompoundTest.java`, use an annotation to override the tax rate properties used in the test.
+. Add the `@TestPropertySource` annotation to the class.
+. Use the `properties` attribute to specify the properties to override. Curly braces (i.e. `{}`) are used to define the key/value pairs.
+. The properties to override are `tax.rate` and `local.tax.rate`.  Set them to `0.03` and `0.04` respectively.
+. Adjust the test method to expect a result of `100.00 + 7` (i.e. `107.00`).  This is the expected result when the tax rate is `0.03` and the local tax rate is `0.04`.
+
+TIP: Any properties defined using `@TestPropertySource` will override those defined in (almost) any other property sources, including `@PropertySource`, environment variables, and JVM system properties.
+
+[,java] 
+----
+
+@SpringJUnitConfig(Config.class)
+@ActiveProfiles("compound")
+@TestPropertySource(properties = {"tax.rate=0.03", "local.tax.rate=0.04"})
+public class RegisterCompoundTest {
+
+----
+
+==== Organize imports, save your work.  Run this test, it should pass.
+
+== OPTIONAL: Using Mockito
+
+Mockito is a popular mocking framework that can be used in conjunction with JUnit to test Java code.  It is widely used in the Java community and a good skill for any Java developer to have.
+
+It takes a bit of practice to get comfortable with mocking, so if you have time, try this challenge.
+
+==== TODO-05: Open `src/test/java/com.example.service.mockito.MockitoRegisterTest.java`. Configure it to use Mockito to test the `Register`.
+. Use the `@ExtendWith` JUnit annotation with `MockitoExtension` to link JUnit and Mockito together.
+. Note that this test will test our object without using the Spring framework at all.  True POJOs should be usable without reliance upon a specific framework.
+[,java]
+----
+@ExtendWith(MockitoExtension.class)
+public class MockitoRegisterTest {
+
+----
+
+==== TODO-06: Define a variable called `taxCalculator` of type `TaxCalculator`.  Annotate this variable with `@Mock`.
+. In Mockito, a _mock_ is a dynamic implementation of an interface which we program to support our test.
+[,java] 
+----
+@Mock TaxCalculator taxCalculator;              
+----
+
+==== TODO-07: Define a variable called `register` of type `Register`.  Annotate this variable with `@InjectMocks`.
+. `Register` is the class we are testing.  
+. Ordinarily, Spring would instantiate `Register` and inject it with `TaxCalculator`. Instead, we use Mockito to instantiate `Register` and inject it with the mock `TaxCalculator`.
+[,java]
+----
+@InjectMocks Register register;  
+----
+
+==== TODO-08: Within the `@Test` method, use Mockito's `when()` method to program the mock.
+. The `when()` method is statically imported.  It is used to program the mock to return a specific value when a method is called.
+. For our test, we want the mock to return `7.0` when the `taxCalculator.calculateTax()` method is called. Any input value to `calculateTax()` is acceptable.
+[,java]
+----
+//  When the taxCalculator.calculateTax() method is called
+//  with any double argument, then return 7.0.
+when(taxCalculator.calculateTax(anyDouble())).thenReturn(7.0);
+----
+
+==== TODO-09: Within the `@Test` method, call the method under test (`computeTotal`) on the `register` object.
+. The `register` object is the class we are testing.  We want to test its `computeTotal` method.  Call this method passing a value such as `100`.
+. Internally, the `computeTotal` method will call `taxCalculator.calculateTax()`.  This mock method should return `7.0` as programmed above.
+. We are testing if the `computeTotal` method correctly adds the tax to the input value.  We expect the result to be `107.0`.  Store the result in a variable.
+[,java]
+----
+double result = register.computeTotal(100);
+----
+
+==== TODO-10: Use AssertJ to verify the result.
+. AssertJ is a popular assertion library that provides a fluent API for writing assertions.  It is a good alternative to JUnit's built-in assertions.
+. Use AssertJ to assert that the result is equal to `100.00 + 7.0`.
+[,java]
+----
+    assertThat(result).isEqualTo(100.00 + 7.0);
+----
+
+==== TODO-11: Verify that the mock had its `calculateTax()` method called.
+. Mockito's `verify()` method is used to verify that a mock was called with specific arguments.
+. Sometimes verifying the mock behavior is the only way to prove that a test is successful.  In this case it is trivial since we can perform assertions on the return value.  We just want you to see an example.
+[,java]
+----
+    verify(taxCalculator).calculateTax(anyDouble());
+----
+
+== Review
+
+In this lab we learned:
+
+* How to use Spring's testing framework to test Spring-based applications.
+* How to override properties used in tests.
+* How to use Mockito to test Java code without using the Spring framework.
+    

@@ -1,0 +1,285 @@
+﻿= Spring Fundamentals, JDBC Support
+:sectnums:
+
+Java Database Connectivity (JDBC) is one of the essential parts of the JDK, used widely when working with relational databases.  However, it is a very low-level API, forcing developers to write redundant, error-prone code with checked Exceptions.  The Spring framework elevates your level of productivity with the `JdbcClient`.
+
+Within the codebase you will find ordered *TODO* comments that describe what actions to take for each step.  By finding all files containing *TODO*, and working on the steps in numeric order, it is possible to complete this exercise without looking at the instructions.  If you do need guidance, you can always look at these instructions for full information.  Just be sure to perform the *TODO* steps in order.
+
+Solution code is provided for you in a separate folder, so you can compare your work if needed.  For maximum benefit, try to complete the lab without looking at the solution.
+
+If you have time, there is an optional challenge working with Mockito to test the service layer.  
+
+== Open the project.
+
+==== Use your IDE to open `C:\LabFiles\70-spring-jdbc` (adjust this location as needed).
+
+==== TODO 01: Open `build.gradle`.  Notice there are two new dependencies added to working with databases:
+
+. org.hsqldb:hsqldb
+. org.springframework:spring-jdbc
+
+* HSQLDB, or HyperSQL, is an in-memory database ideal for local testing.  Spring JDBC is the Spring module that provides support for JDBC.
+* "runtimeOnly" refers to dependencies that are needed at runtime, but not at compile time.  We don't want our code to have direct references to the library's code.
+
+== Define Database and `JdbcClient`.
+
+==== TODO 02: Open `src/main/java/com/example/Config.java`.  Define a DataSource bean.
+. Name the bean `dataSource`.
+. The type of the bean shoule be `DataSource`.
+. Use the `EmbeddedDatabaseBuilder` class to create an in-memory database.  
+. The type of database should be `HSQLDB`.  
+. On startup, the `schema.sql` and `data.sql` scripts should be automatically run.  These files are located in `src/main/resources/`, which are part of the classpath root.
+[,java]
+----
+    @Bean
+    public DataSource dataSource() {
+        return new EmbeddedDatabaseBuilder()
+            .setType(EmbeddedDatabaseType.HSQL)
+            .addScript("classpath:schema.sql") 
+            .addScript("classpath:data.sql")   
+            .build();
+    }
+----
+
+==== TODO 03: Define a JdbcClient bean.
+. Name the bean `jdbcClient`.
+. The type of the bean should be `JdbcClient`.
+. The bean method should take a `DataSource` parameter.
+. Use the `JdbcClient.create()` factory method to create a new instance.  Inject it with the `DataSource` parameter.
+[,java]
+----
+    @Bean
+    public JdbcClient jdbcClient(DataSource dataSource) {
+        return JdbcClient.create(dataSource);
+    }
+----
+
+== Implement the `PurchaseDaoImpl`.
+
+==== TODO 04: Open the `src/main/java/com/example/dao/PurchaseDaoImpl.java` file.  Annotate it as a Spring bean.
+* Use the stereotype annotation you feel is most descriptive.  This object reads and writes to a database.
+[,java]
+----
+@Repository
+public class PurchaseDaoImpl implements PurchaseDao {
+----
+==== TODO 05: Have Spring inject the `JdbcClient` into this class.
+. Use whatever injection technique you like (constructor, setter, field).  
+    * To use constructor injection, you will need to define a constructor that takes a `JdbcClient` parameter.
+    * To use setter injection, you will need to define a setter method that takes a `JdbcClient` parameter.
+    * To use field injection, you will only need to annotate the existing field with `@Autowired`.
+[,java]
+----
+@Autowired JdbcClient jdbcClient;
+----
+
+==== TODO 06: Implement the `getAllPurchases()` method.
+. Use the `jdbcClient` to retrieve all purchases from the database.
+. The SQL statement is provided in the method.
+. Use the `sql` method to specify the SQL statement.
+. Use the `query` method to specify a `RowMapper`.
+. Use a new `BeanPropertyRowMapper<Purchase>(Purchase.class)` to easily map columns to `Purchase` properties.
+* The goal is to return a `List` of `Purchase` objects.
+[,java]
+----
+    public List<Purchase> getAllPurchases() {
+        String sql = "SELECT * FROM PURCHASE";
+        return jdbcClient
+            .sql(sql)
+            .query(new BeanPropertyRowMapper<Purchase>(Purchase.class))
+            .list();
+    }
+----
+
+==== TODO 07: Implement the `getPurchase()` method.
+. Use the `jdbcClient` to retrieve a single purchase from the database.
+. The SQL statement is provided in the method.
+. Use the `sql` method to specify the SQL statement.
+. Use the `param` method to specify the `id` parameter.
+. Use the `query` method to specify a `RowMapper`.
+. Use a new `BeanPropertyRowMapper<Purchase>(Purchase.class)` to easily map columns to `Purchase` properties.
+* The goal is to return a single `Purchase` object.
+[,java]
+----
+    public Purchase getPurchase(int id) {
+        String sql = "SELECT * FROM PURCHASE WHERE ID = ?";
+        return jdbcClient
+            .sql(sql)
+            .param(id)
+            .query(new BeanPropertyRowMapper<Purchase>(Purchase.class))
+            .single();
+    }   
+----
+
+==== TODO 08: Implement the `savePurchase()` method.
+. Use the `jdbcClient` to insert a purchase into the database.
+. The SQL statement is provided in the method.
+. Use the `sql` method to specify the SQL statement.
+. Use the `param` method to specify the name, product, and date parameters, in order.
+. Use the `update` method to execute the insert. 
+    * This is correct, all update, insert, and delete operations are done with the `update` method.
+[,java]
+----
+    public void savePurchase(Purchase purchase) {
+        String sql = "insert into PURCHASE (CUSTOMERNAME, PRODUCT, PURCHASEDATE) values(?,?,?)";
+        jdbcClient
+            .sql(sql)
+            .param(purchase.getCustomerName())
+            .param(purchase.getProduct())
+            .param(purchase.getPurchaseDate())
+            .update();    
+    }
+----
+
+==== Organize your imports, save your work, move on to the next step.
+
+== Implement the `PurchaseServiceImpl`.
+
+==== TODO 09: Open the `src/main/java/com/example/service/PurchaseServiceImpl.java` file.  Annotate it as a Spring bean.
+* Use the stereotype annotation you feel is most descriptive.  This object is a service layer class.
+[,java]
+----
+@Service
+public class PurchaseServiceImpl implements PurchaseService {
+----
+
+==== TODO 10: Have Spring inject the `PurchaseDao` into this class.
+. Use whatever injection technique you like (constructor, setter, field).
+[,java]
+----
+@Autowired PurchaseDao purchaseDAO;
+----
+
+==== Organize your imports, save your work, move on to the next step.
+
+== Implement the `PurchaseDaoImplTests`.
+
+==== TODO 11: Open `src/test/java/com/example/dao/PurchaseDaoImplTests.java`.  Annotate it as a Spring test class.
+* Include the configuration class you wish to load.
+[,java]
+----
+@SpringJUnitConfig(Config.class)
+public class PurchaseDaoImplTests {
+----
+==== TODO 12: Have Spring inject a `PurchaseDao` into this class.
+[,java]
+----
+    @Autowired PurchaseDao dao;
+----
+
+==== TODO 13: Examine the `findAllPurchases()` test method.
+* This method calls the dao's `getAllPurchases()` method, then checks the results.
+* The returned List is checked to ensure it is not null and has multiple elements.
+* The first element is checked to ensure its properties are mapped correctly.
+* Remove the `@Disabled` annotation, run the test, and ensure it passes.
+
+==== TODO 14: Implement the `getPurchase()` test method.
+* This method should call the dao's `getPurchase()` method with an ID of 1, 2, or 3.
+* Use `assertThat` to check the returned `Purchase` object is not null and has its properties mapped correctly.
+* Use the previous test method for guidance.
+[,java]
+----
+    @Test
+    public void getPurchase() {
+        Purchase p = dao.getPurchase(2);
+
+        // Make sure the purchase has its properties mapped:
+        assertThat(p).isNotNull();
+        assertThat(p.getId()).isNotNull();
+        assertThat(p.getCustomerName()).isNotNull();
+        assertThat(p.getCustomerName()).isEqualTo("Paul");
+        assertThat(p.getProduct()).isEqualTo("Football");
+    }
+----
+
+==== TODO 15: Implement the `savePurchase()` test method.
+* Alter the `Purchase` test data as you like, and call the `savePurchase()` method.
+* A `getPurchase(String customerName, Date date)` method is available on the dao to retrieve the purchase you just saved.  Call it to retrieve the new purchase.
+* Add assertions to make sure the purchase retrieved matches the one that was saved.
+[,java]
+----
+    @Test
+    public void savePurchase() {
+        Purchase p = new Purchase();
+        p.setCustomerName("Sample");
+        p.setProduct("Sample Product");
+        p.setPurchaseDate( new Date());
+
+        dao.savePurchase(p);
+        Purchase newPurchase = dao.getPurchase(p.getCustomerName(),p.getPurchaseDate());
+
+        // Make sure the purchase was saved properly:
+        assertThat(newPurchase).isNotNull();
+        assertThat(newPurchase.getId()).isNotNull();
+        assertThat(newPurchase.getCustomerName()).isNotNull();
+        assertThat(newPurchase.getCustomerName()).isEqualTo(p.getCustomerName());
+        assertThat(newPurchase.getProduct()).isEqualTo(p.getProduct());
+    }
+----
+==== TODO-16: Organize your imports, save your work. Run this test class.  All tests should pass.
+
+
+== OPTIONAL: Test `PurchaseServiceImpl` using Mockito.
+If you have time, you can test the `PurchaseServiceImpl` using Mockito.  This is an optional challenge.
+
+==== TODO-17: Open `src/test/java/com/example/service/PurchaseServiceImplTests.java`.  Annotate it as a Mockito test class.
+* Use the JUnit `@ExtendWith` annotation combined with the `MockitoExtension` class.
+[,java]
+----
+@ExtendWith(MockitoExtension.class)
+public class PurchaseServiceImplTests {
+----
+==== TODO-18: Define a Mock object called `purchaseDao` of type `PurchaseDao`.
+* Annotate this variable with `@Mock`.
+[,java]
+----
+@Mock PurchaseDao purchaseDao;
+----
+==== TODO-19: Define a variable called `purchaseService` of type `PurchaseServiceImpl`.
+* Annotate this variable with `@InjectMocks`.  This tells Mockito to inject it with the mock `purchaseDao`.
+[,java]
+----
+@InjectMocks PurchaseServiceImpl purchaseService;
+----
+==== TODO-20: Within the `testFindAllPurchases()`, use Mockito's `when()` method to program the mock.
+* When the mock's `getAllPurchases()` method is called, return the `expectedPurchases` list.
+[,java]
+----
+when(purchaseDao.getAllPurchases()).thenReturn(expectedPurchases);
+----
+* Note that the `expectedPurchases` list is populated with test data for you.
+
+==== TODO-21: Call the method under test.
+* Capture the results of the `findAllPurchases()` method in a variable.
+[,java]
+----
+List<Purchase> result = purchaseService.findAllPurchases();
+----
+==== TODO-22: Test the result.
+* Assert that the returned result contains the same elements in the `expectedPurchase` list.
+* This kind of assertion is tricky.  Fortunately AssertJ has a method for this.
+[,java]
+----
+assertThat(result).containsExactlyElementsOf(expectedPurchases);
+----
+==== TODO-23: Verify that the mock had its `getAllPurchases()` method called.
+* Use the `verify()` method.  Your mock object is the parameter to this method.
+* For some tests, `verify()` is critical; for others, it's trivial.
+[,java]
+----
+verify(purchaseDao).getAllPurchases();
+----
+
+==== TODO-24: Organize your imports, save your work, run this test class.  All tests should pass.
+
+
+== Review
+
+In this lab we learned:
+
+* How to configure a `DataSource` bean using an in-memory database.
+* How to define a `JdbcClient` bean.
+* How to use the `JdbcClient` to perform SELECT and INSERT operations on a database.
+* How to test the DAO.
+* How to use Mockito to test the service layer.
+

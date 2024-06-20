@@ -1,0 +1,416 @@
+﻿= Spring Fundamentals, JPA Support
+:sectnums:
+
+Java Persistence API (JPA) provides a higher-level abstraction to JDBC when working with relational databases.  Spring works well with JPA, handling the `EntityManagerFactory` for you, and providing the same declarative transaction management support we saw earlier.
+
+Within the codebase you will find ordered *TODO* comments that describe what actions to take for each step.  By finding all files containing *TODO*, and working on the steps in numeric order, it is possible to complete this exercise without looking at the instructions.  If you do need guidance, you can always look at these instructions for full information.  Just be sure to perform the *TODO* steps in order.
+
+Solution code is provided for you in a separate folder, so you can compare your work if needed.  For maximum benefit, try to complete the lab without looking at the solution.
+
+If you have time, there is an optional challenge working with Mockito to test the service layer.  
+
+== Open the project.
+
+==== Use your IDE to open `C:\LabFiles\90-spring-jpa` (adjust this location as needed).
+
+==== TODO 01: Open `build.gradle`.  Notice the new dependencies added for working with JPA:
+
+* org.springframework:spring-orm
+* jakarta.persistence:jakarta.persistence-api
+* org.hibernate.orm:hibernate-core
+
+** Jakarta Persistence API is the _API_ that we reference in our code.  Hibernate is a JPA _implementation_.  
+** Notice that the Hibernate is marked "runtimeOnly".  It will not be available when compiling, but will be on the classpath when running.  This prevents us from inadvertently coupling our code to the Hibernate implementation.
+** Notice that HyperSQL and Spring JDBC are still present.  We still need an in-memory database, and Spring's ORM support is based on Spring's JDBC support.
+
+== Define `EntityManagerFactory` bean and `PlatformTransactionManager`.
+
+==== TODO 02: Open `src/main/java/com.example.config.Config`.  Examine the existing `localContainerEntityManagerFactoryBean`. 
+[source,java]
+----
+    @Bean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource ds) {
+        var emfb = new	LocalContainerEntityManagerFactoryBean();	    // (1)
+        emfb.setDataSource(ds);									        // (2)
+        emfb.setPackagesToScan("com.example.domain");                   // (3)
+
+        var adapter = new HibernateJpaVendorAdapter();				    // (4)
+        emfb.setJpaVendorAdapter(adapter);
+
+        var props = new Properties();									// (5)
+        props.setProperty("hibernate.show_sql", "true"); 
+        props.setProperty("hibernate.format_sql", "true"); 
+        props.setProperty("hibernate.use_sql_comments", "true"); 
+
+        emfb.setJpaProperties(props);
+        return emfb;
+    }  
+----
+. The `LocalContainerEntityManagerFactoryBean` is part of the Spring framework.  It is a specialized form of Spring FactoryBean that creates JPA `EntityManagerFactory` instances.
+. It requires a `DataSource` to be injected.  This provides a database connection and also makes the `EntityManagerFactory` aware of the _type_ of database being used (e.g. Oracle, MySQL, etc.)  This is important as different databases have different SQL dialects and capabilities.
+. The `setPackagesToScan` tells where to look for JPA `@Entity` classes.  This is a comma-separated list of packages.  Similar to Spring's `@ComponentScan`, but we are looking for entities.
+. The `HibernateJpaVendorAdapter` is a Spring class that configures Hibernate-specific settings.  It plugs JPA into the Hibernate implementation.
+. The `Properties` object is used to set JPA properties, some of which may be Hibernate specific. In this case, we are setting properties to display well-formatted SQL, which helps greatly when debugging.
+
+No changes are needed to this bean definition.  It is already correct.
+
+==== TODO 03: Define a `PlatformTransactionManager` for JPA.
+. The name of the bean should be `transactionManager`.
+. The type of the bean should be `PlatformTransactionManager`.
+. The method should accept an `EntityManagerFactory` as a parameter.
+. Instantiate and return a `JpaTransactionManager` injected with the `EntityManagerFactory`.
+[source,java]
+----
+@Bean
+public PlatformTransactionManager transactionManager(EntityManagerFactory emf) {
+    return new JpaTransactionManager(emf);  
+}   
+----
+
+NOTE:   There is no bean definition for `EntityManagerFactory`.  Spring's `LocalContainerEntityManagerFactoryBean` is a `FactoryBean` that automatically creates an `EntityManagerFactory` when needed.  Spring uses this `FactoryBean` pattern to create beans that are more complex to instantiate.
+  
+== Define the `Customer` entity.
+
+==== TODO 04: Open `com.example.domain.Customer`.  Annotate the class and fields as follows:
+. Annotate the class with `@Entity` to mark it as a JPA entity.
+. Annotate the class with `@Table(name="CUSTOMERS")` to override the table name.
+. Annotate the `id` field with `@Id` to mark it as the primary key.
+. Annotate the `id` field with `@GeneratedValue(strategy=GenerationType.IDENTITY)` to describe the primary key generation strategy.
+* This annotation tells JPA to use the database's identity column when generating a primary key value during INSERT.  This is a common strategy for primary key generation.
+. Annotate the `name` field with `@Column(name="CUSTOMER_NAME")` to override the column name.
+* By default, JPA will use the field name as the column name.  In this case, the column is named `CUSTOMER_NAME`.
+* Notice that we do not need to annotate any other fields like `email`.  By default, JPA considers all fields persistent and assumes the field name matches the column name.
+[source,java]
+----
+@Entity
+@Table(name="CUSTOMERS")
+public class Customer {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	long id;
+	
+	@Column(name="CUSTOMER_NAME")
+	String name;
+----
+
+== Define the `Purchase` entity.
+
+==== TODO 05: Open `com.example.domain.Purchase`.  Annotate the class and fields as follows:
+. Annotate the class with `@Entity` to mark it as a JPA entity.
+. Annotate the class with `@Table(name="PURCHASES")` to override the table name.
+. Annotate the `id` field with `@Id` to mark it as the primary key.
+. Annotate the `id` field with `@GeneratedValue(strategy=GenerationType.IDENTITY)` to describe the primary key generation strategy.
+. Annotate the `customer` field with `@ManyToOne` to mark it as a many-to-one relationship.
+* The database will have a foreign key relationship between `PURCHASES` and `CUSTOMERS`.
+* When reading a `Purchase`, the `Customer` will be populated automatically.
+* When saving a new `Purchase`, the `Customer` will need to be provided to establish the relationship.
+. Annotate the `purchaseDate` field with `@Column(name="PURCHASE_DATE")` to override the column name.
+[source,java]
+----
+@Entity
+@Table(name="PURCHASES")
+public class Purchase {
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)  
+	private int id;
+
+	@ManyToOne
+	private Customer customer;
+
+	@Column(name="PURCHASE_DATE")
+	private Date purchaseDate;
+
+----
+
+== Implement JPA code within `PurchaseDaoImpl`.
+
+==== TODO 06: Open `com.example.dao.PurchaseDaoImpl`.  Annotate the class as a Spring bean.
+. Use the most descriptive stereotype annotation.  This class is _not_ a service layer object or a web controller.
+[source,java]
+----
+@Repository
+public class PurchaseDaoImpl implements PurchaseDao {
+----
+
+==== TODO 07: Inject the `EntityManager` into the class.
+. Use the special JPA annotation to inject the `EntityManager` into this class.
+. Do NOT use `@Autowired`, `@Resource`, or `@Inject`.  The `EntityManager` is a special case.
+[source,java]
+----
+@PersistenceContext
+EntityManager em;
+----
+*IMPORTANT:*
+
+* `@PersistenceContext` causes Spring to inject a special _proxy_ `EntityManager`.  This proxy contains lookup logic to find the actual `EntityManager` associated with the current thread and transaction.  It delegates all calls to this object.  This allows our code to simultaneously handle hundreds of threads and concurrent transactions.
+* Injecting the `EntityManager` directly with `@Autowired` would be a mistake: there is no such bean in the ApplicationContext, and it is not thread-safe.
+* Injecting the `EntityManagerFactory` directly would also be a mistake: it would not be aware of the current transaction used by any given thread.
+
+==== TODO 08: Implement the `getAllPurchases` method.
+. Remove the existing `return null;` statement.
+. Use the `EntityManager` to create a query.
+. The JPQL query string is provided.  It will select all purchases.
+. The `createQuery` method needs to know the type of entity being returned.  This will be `Purchase.class`.
+. The `getResultList` method will return a `List<Purchase>`.
+[source,java]
+----
+    public List<Purchase> getAllPurchases() {
+        String jpql = "SELECT p FROM Purchase p";
+        return em
+            .createQuery(
+                jpql, 
+                Purchase.class)
+            .getResultList();
+    }
+----
+
+==== TODO 09: Implement the `getPurchase` method.
+. Remove the existing `return null;` statement.
+. Use the `EntityManager` to find a single `Purchase`.
+* Use the `find` method, not `createQuery`.  We are looking for a single object by its primary key.
+* The `find` method requires the type of entity and the primary key value.  The type must be a class annotated with `@Entity`.
+* `find` returns a single result.
+[source,java]
+----
+    public Purchase getPurchase(int id) {
+        return em.find(Purchase.class, id);
+    }
+----
+
+==== TODO 10: Implement the second `getPurchase` method.
+. Remove the existing `return null;` statement.
+. Use the `EntityManager` to create a query.
+. The JPQL query string is provided.  It will select a single purchase by customer name and date.  Notice the placeholders `:name` and `:date`.
+. The `createQuery` method needs to know the type of entity being returned.  This will be `Purchase.class`.
+. Parameters to the query need to be set using the `setParameter` method.
+. The `getSingleResult` method will return a single `Purchase`.
+[source,java]
+----
+    public Purchase getPurchase(String name, Date date) {
+        String jpql = "SELECT p FROM Purchase p WHERE p.customerName = :name AND p.purchaseDate = :date";
+        return em
+            .createQuery(jpql, Purchase.class)
+            .setParameter("name", name)
+            .setParameter("date", date)
+            .getSingleResult();
+    }
+----
+
+==== TODO 11: Implement the `savePurchase` method.
+. Check the incoming `Purchase` object's ID to determine if this entity already exists in the persistence context.
+* A positive ID indicates an existing entity.  Use the `merge` method to update the entity in the persistence context. (This may result in the entity being SELECTed from the database if it is not already in memory.  It will be UPDATED when the `EntityManager` is flushed.)
+* A zero ID indicates a new entity.  Use the `persist` method to add the entity to the persistence context.  (This results in an INSERT to the database.)
+[source,java]
+----
+    public void savePurchase(Purchase purchase) {
+        if(purchase.getId() < 1) {
+            em.persist(purchase);
+        } else {
+            em.merge(purchase);
+        }
+    }
+----
+
+==== Organize your imports, save your work.
+
+== Implement the `PurchaseServiceImpl`.
+
+==== TODO 12: Open `com.example.service.PurchaseServiceImpl`.  Annotate the class as a Spring bean.
+* Use the most descriptive stereotype annotation.  This class is a service layer object.
+[source,java]
+----
+@Service
+public class PurchaseServiceImpl implements PurchaseService {
+----
+
+==== TODO 13: Inject the `PurchaseDao` into the class.
+* Use whatever dependency injection technique you prefer.
+[source,java]
+----
+@Autowired PurchaseDao purchaseDao;
+----
+
+==== Organize your imports, save your work.
+ 
+== Implement `PurchaseDaoImplTests`.
+JPA offers to take care of much of the low level work associated with database CRUD operations, but we still need to have integration tests to ensure that it works correctly.
+
+==== TODO 14: Open `src/test/java/com.example.dao.PurchaseDaoImplTests`.  Annotate the class as a Spring test class.
+* Make the test methods transactional.  This will rollback any changes after each test is complete, making the tests repeatable.
+[source,java]
+----
+@SpringJUnitConfig(Config.class)
+@Transactional
+public class PurchaseDaoImplTests {
+----
+
+==== TODO 15: Inject the `EntityManager` into the class.
+. Use the special JPA annotation to inject the `EntityManager` into this class.
+. Do NOT use `@Autowired`, `@Resource`, or `@Inject`.  The `EntityManager` is a special case.
+[source,java]
+----
+    @PersistenceContext EntityManager em;
+----
+
+==== TODO 16: Inject the `PurchaseDao` into the class.
+* This is the main object under test.
+[source,java]
+----
+    @Autowired PurchaseDao repo;
+----
+
+==== TODO 17: Implement the `findAllPurchases` test method.
+. Remove the `@Disabled` annotation.
+. Use the `PurchaseDao` to retrieve all purchases.
+. Use AssertJ `assertThat()` to check that the list is not null and has a size greater than zero.
+. Assert that the first purchase has its properties mapped.
+* Notice that the customer name is accessed on the `Customer` referenced through the `Purchase` object.
+[source,java]
+----
+    @Test
+    public void	findAllPurchases() {
+        List<Purchase> purchases = repo.getAllPurchases();
+
+        //  Make sure there are multiple purchases, and 
+        //  that purchases have their properties mapped:
+        assertThat(purchases).isNotNull();
+        assertThat(purchases.size()).isGreaterThan(0);
+        Purchase p = purchases.get(0);
+        assertThat(p).isNotNull();
+        assertThat(p.getId()).isNotNull();
+        assertThat(p.getCustomer().getName()).isNotNull();
+        assertThat(p.getCustomer().getName()).isEqualTo("Bruce");
+    }
+----
+
+==== TODO 18: Implement the `getPurchase` test method.
+. Use the `PurchaseDao` to retrieve a single purchase by ID.
+* Use an ID value of 1, 2, or 3 to match the data in `data.sql`.  The ID that you use will determine the values to use in your assertions below.
+. Make sure the purchase has its properties mapped.
+* Use the method you just completed for guidance.
+[source,java]
+----
+    @Test
+    public void	getPurchase() {
+        Purchase p = repo.getPurchase(2);
+
+        //  Make sure the purchase has its properties mapped:
+        assertThat(p).isNotNull();
+        assertThat(p.getId()).isNotNull();
+        assertThat(p.getCustomer().getName()).isNotNull();
+        assertThat(p.getCustomer().getName()).isEqualTo("Paul");
+        assertThat(p.getProduct()).isEqualTo("Football");
+    }
+----
+
+==== TODO 19: Implement the `savePurchase` test method.
+. Note the existing logic using `EntityManager` `find` to get an existing `Customer`. (We want to try adding a new `Purchase` to an existing `Customer`.)
+. Note the existing `Purchase` object created for test data.  Change these values if you like.  Important: notice how the `Customer` property is set to the `Customer` object just retrieved; this establishes the foreign key relationship.
+. Use the `PurchaseDao` to save the `Purchase`.
+. Clear the persistence context by calling the `EntityManager` `clear()` method.
+* Important: We want to make sure the `Purchase` we are about to retrieve is coming from the database, not from the persistence context in memory.
+. Use the `PurchaseDao` to retrieve the `Purchase` by ID.  The ID can be found on the `Purchase` object that was just saved.
+* Interesting: where did this ID come from?  It was generated by the database when the `Purchase` was saved, and JPA updated the `Purchase` object in the persistence context with this new value.
+. Use AssertJ to check that the saved `Purchase` properties match the original `Purchase` properties.
+[source,java]
+----
+    @Test
+    public void testSaveAndFind() {
+
+        //  Get an existing customer:
+        Customer c = em.find(Customer.class, 1);
+
+        //  Create a new purchase:
+        Purchase p = new Purchase();
+        p.setCustomer(c);
+        p.setProduct("Incan ceremonial headmask");
+        p.setPurchaseDate(new Date());
+
+        //  Save...
+        repo.savePurchase(p);
+    
+        //  Clear...
+        em.clear();
+
+        //  Find...
+        Purchase purchase = repo.getPurchase(p.getId());
+
+        //  Assert...
+        assertEquals(p.getProduct(), purchase.getProduct());
+        assertEquals(p.getPurchaseDate(), purchase.getPurchaseDate());
+    }
+----
+
+==== Organize your imports, save your work. Run this test, it should pass.
+
+== OPTIONAL: Implement `PurchaseServiceImplTests` using Mockito.
+
+If you have extra time and would like to get more practice working with Mockito, run through the following steps to test the service layer.
+
+==== TODO 21: Open `src/main/java/com.example.service.PurchaseServiceImplTests`.  Annotate the class as a Mockito test class.
+* Use JUnit's `@ExtendWith` annotation combined with Mockito's `MockitoExtension` class.
+[source,java]
+----
+@ExtendWith(MockitoExtension.class)
+public class PurchaseServiceImplTests {
+----
+
+==== TODO 22: Define a variable called `purchaseDao` of type `PurchaseDao`.  
+* Have Mockito setup this variable as a mock object.
+[source,java]
+----
+    @Mock PurchaseDao purchaseDao;              
+----
+
+==== TODO 23: Define a variable called `purchaseService` of type `PurchaseServiceImpl`.  
+* Have Mockito inject this variable with the mock `purchaseDao`.
+[source,java]
+----
+    @InjectMocks PurchaseServiceImpl purchaseService;  
+----
+
+==== TODO 24: Within the `@Test` method, use Mockito's `when()` method to program the mock. 
+* When the mock's `getAllPurchases()` method is called, have it return the expected purchases.
+[source,java]
+----
+    when(purchaseDao.getAllPurchases()).thenReturn(expectedPurchases);
+----
+
+==== TODO 25: Call the method under test.  
+* Capture the results of the `findAllPurchases()` method in a variable.
+[source,java]
+----
+    List<Purchase> result = purchaseService.findAllPurchases();
+----
+
+==== TODO 26: Test the result.  It should contain the same elements in the expected purchase list.
+* Use AssertJ to verify this.  It has a time-saving method for comparing collection contents: `containsExactlyElementsOf()`.
+[source,java]
+----
+        assertThat(result)
+            .containsExactlyElementsOf(expectedPurchases);        
+----
+
+==== TODO 27: Verify that the mock had its `getAllPurchases()` method called.
+* Use Mockito's `verify()` method to check this.
+[source,java]
+----
+    verify(purchaseDao).getAllPurchases();
+----
+* Note that `verify()` is sometimes the only way we can test that a method behaved as expected.  In this case it is not necessary, but doesn't hurt.
+
+==== Organize your imports, save your work.  Run this test, it should pass.
+
+== Review
+
+In this lab we learned:
+
+* How to configure JPA with Spring.
+* How to implement the JpaTransactionManager.
+* How to define JPA entities.
+* How to implement a DAO layer using JPA.
+* How to test the JPA-based DAO layer.
+
+

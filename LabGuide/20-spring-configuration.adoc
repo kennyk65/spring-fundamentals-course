@@ -1,0 +1,151 @@
+= Spring Fundamentals, Spring Configuration
+:sectnums:
+
+In this lab, you will add code to complete an existing project, *20-spring-configuration*.  You will add code to define and test the configuration of some Spring beans.  
+
+Within the codebase you will find ordered *TODO* comments that describe what actions to take for each step.  By finding all files containing *TODO*, and working on the steps in numeric order, it is possible to complete this exercise without looking at the instructions.  If you do need guidance, you can always look at these instructions for full information.  Just be sure to perform the *TODO* steps in order.
+
+Solution code is provided for you in a separate folder, so you can compare your work if needed.  For maximum benefit, try to complete the lab without looking at the solution.
+
+If you have time, there is an optional challenge to work with `@Profile`, `@PropertySource`, and `@Value`.
+
+== Open VS Code.
+
+==== Inside VSCode, use File / Open Folder... and select the `C:\LabFiles\20-spring-configuration` (or wherever you have located your lab files).
+* Give VSCode and Gradle a moment to recognize the project.
+* If you see a message about enabling null analysis for the project, you can select either enable or disable.
+* If you see a message about installing “Extension Pack for Java”, take the install option.
+* If you see a message "Do you trust the authors of the files in this folder", check the checkbox and click the "trust" button.
+
+==== VS Code *should* recognize the project as a Gradle project and automatically import it. If it does not and you see build or compilation errors, you may need to manually import it:
+
+* Open the Command Palette (Ctrl+Shift+P or Cmd+Shift+P on macOS).
+* Type "Gradle: Import Gradle Project" and select it.
+* Navigate to the project directory and select the build.gradle file.
+* Click "Open".
+
+== Run your application
+
+* **Using VS Code:** Open src/main/java/com/webage folder and find `App.java`. Right-click and select "Run Java". (Or, click the a “Run” option hovering over the main() method.)
+* **Using IntelliJ:** Run the application by expanding the src/main/java folder, then the com.example package. Right-click on the `App.java` file. Select “Run ‘App.main()’”. 
+* **Using Eclipse:** Run the application by expanding the src/main/java folder, then the com.example package. Right-click on the `App.java` file. Select Run As / Java Application.
+
+We expect the application to start, produce some console output, then stop.
+
+== Find the TODO instructions
+
+* **Using VS Code:** Select "Edit" / "Find in Files..." and search for "TODO".
+* **Using IntelliJ:**  Select "Edit" / "Find" / "Find in Files..." and search for "TODO".  Use the "Open in Find Window" button to place the results in a tab for easy navigation.
+* **Using Eclipse:** Select "Window" / "Show View" / "Tasks".  Use the "Search" view to search for "TODO".  Find a filter icon on the top of this tab.  Check "Show all items", "TODOs".  For scope select "on elements in the selected projects".  The list of TODOs will appear in order!
+
+IMPORTANT: Work through the TODO instructions in order!   
+
+== @Configuration class
+
+==== Open src/main/java *com.example.Config.java*.
+
+==== TODO-01: Add the `@Configuration` annotation to the class definition.  
+. This tells Spring that this class contains bean definitions.
+
+==== TODO-02: Within the Config class, write a `@Bean` method to define a Spring Bean. 
+. The method should return a new instance of `SalesTaxCalculator`.  
+. The bean's name should be "taxCalculator".
+
+==== TODO-03: Write another `@Bean` method. 
+. The bean's type should be `Register`.  
+. The bean's name should be "register".  
+. The method should take one parameter of type `TaxCalculator`.  
+. The method should instantiate and return a `Register` instance.  Dependency inject the instance with the `TaxCalculator`.
+
+==== Organize your imports and save your work.
+
+== Main Application Class
+
+==== Open src/main/java *com.example.App.java*.
+
+==== TODO-05: Within the `public static void main()` method, instantiate the Spring `ApplicationContext` using `AnnotationConfigApplicationContext`.
+. Pass the `Config.class` to the constructor.
+. Use the previous lab as a guide if needed.
+
+==== TODO-06: Retrieve the `Register` bean from the context using the `getBean()` method. 
+. Lookup the bean by its name or type - your choice 
+        
+==== TODO-07: Call the `calculateTotal()` method on the `Register` instance. 
+. Pass in a double value of 100.0. 
+. Print the result to the console.
+
+==== TODO-08: Organize your imports and save your work. Run the application.
+* Expect to see the total cost printed to the console.
+
+== Integration Test
+Whatever we code, we should test.  We will write a test to verify that our Spring configuration correctly builds the beans as directed.
+
+==== Open src/test/java *com.example.service.RegisterTest.java*.
+
+==== TODO-09: Define a static variable of type `Register`. 
+* Name the variable whatever you like.
+
+==== TODO-10: Add a setup method annotated with `@BeforeAll`. 
+. The method should be static and void.  It can have any name you like.
+. Annotate the method with `@BeforeAll`.
+. Instantiate the `ApplicationContext` as you did earlier.
+. Retrieve the `Register` bean from the context and assign it to the static variable.
+
+==== TODO-11: Add a test method.  
+. Name the method whatever you like.  Return type should be void.
+. The test logic should call the `computeTotal()` method on the `Register` bean.
+. Pass in a double value of 100.00.
+. Use the `assertThat` method to verify that the result is 105.00.
+
+NOTE: The `assertThat()` method is part of the AssertJ framework.  See the static import at the top of the class.
+
+==== TODO-12: Organize your imports and save your work.  Run the test, it should pass.
+* If the test fails, review your code and try again.
+
+== OPTIONAL: Use `@Profile`, `@PropertySource`, and `@Value` annotations.
+
+If you have time, there are some improvements we can make to this application.
+
+At present, the tax rate is hard-coded in the `SalesTaxCalculator` class.  We can use the `@Value` annotation to inject the tax rate from a properties file.  We will also use the `@Profile` annotation to define different configurations for different environments.
+
+==== Open src/main/java *com.example.AlternateConfig.java*.
+
+==== TODO-13: Add `@Profile` and `@PropertySource` annotations to this `@Configuration` class.
+. Set the `@Profile` attribute to *alternate*.  This configuration class will be activated only when the *alternate* profile is active.
+. Add a `@PropertySource` annotation to read 'app.properties' from the classpath root.
+. i.e. `@PropertySource("classpath:app.properties")`
+
+==== TODO-14: Define a SalesTaxCalculator `@Bean`.
+. Name the bean whatever you like.
+. Define a method parameter of type double named "taxRate".
+. Use the `@Value` annotation to inject the value of the property "${tax.rate}".
+. Instantiate `SalesTaxCalculator` using the constructor which takes a tax rate.
+. Return the `SalesTaxCalculator` instance.
+
+==== TODO-15: Organize your imports and save your work.
+
+==== Open src/main/resources *app.properties*. 
+* This properties file externalizes the tax rate from our code.  
+* We could also set the tax rate via an environment variable or system property.
+
+== OPTIONAL @Test the Alternate Configuration
+Whatever we code, we should test.  Our next test will verify that our alternative configuration builds our beans and injects the tax rate as expected.
+
+==== Open src/test/java *com.example.service.AlternateRegisterTest.java*.
+
+==== TODO-16: Within th `setup()` method, set a Java system property *spring.profiles.active* to the value *alternate*.
+* Use `System.setProperty()` to set the property.
+* When the Spring context is created, it will activate the *alternate* profile.
+
+==== TODO-17: Write a @Test method to verify the computeTotal method.
+. Use your previous test method as a guide.  
+. Adjust the logic to assert the total based on the configured tax.rate.
+
+==== TODO-18: Organize your imports, save your work.  Run the test, it should pass.
+
+== Summary
+You have just gained practice creating Spring configuration classes and beans.  You have applied dependency injection and tested all your work.  
+
+If you did the optional section, you used `@Profile` to selectively instantiate a set of beans, and you dynamically read and injected a parameter using `@PropertySource` and `@Value`.
+
+

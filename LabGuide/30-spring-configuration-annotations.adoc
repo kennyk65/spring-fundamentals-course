@@ -1,0 +1,194 @@
+
+= Spring Fundamentals, Spring Configuration with Annotations
+:sectnums:
+
+In this lab, you will add code to complete an existing project, *30-spring-configuration-annotations*.  In the previous lab you used `@Configuration` classes with `@Bean` methods, in this lab you will achieve the same result using `@Component` and `@ComponentScan` techniques.  As before, you will create test cases covering everything implemented. 
+
+Within the codebase you will find ordered *TODO* comments that describe what actions to take for each step.  By finding all files containing *TODO*, and working on the steps in numeric order, it is possible to complete this exercise without looking at the instructions.  If you do need guidance, you can always look at these instructions for full information.  Just be sure to perform the *TODO* steps in order.
+
+Solution code is provided for you in a separate folder, so you can compare your work if needed.  For maximum benefit, try to complete the lab without looking at the solution.
+
+If you have time, there is an optional challenge working with `@Profile` and `@Value`.
+
+
+== Open the project.
+
+==== Open VS Code.
+
+==== Use File / Open Folder... and select the `C:\LabFiles\30-spring-configuration-annotations` (or wherever you have located your lab files).
+* As before, give VSCode and Gradle a moment to recognize the project.  If you see a message about enabling null analysis for the project, you can select either enable or disable.
+* If you have any issues opening the project, check the troubleshooting tips in the previous lab.
+
+==== Open `src/main/java/com.example.App.java` and run the application.  
+* We expect the application to start, produce some console output, then stop.
+
+TIP: If you cannot remember how to run the application, refer back to the detailed guidance in the previous lab.
+  
+== Find the TODO instructions
+
+* **Using VS Code:** Select "Edit" / "Find in Files..." and search for "TODO".
+* **Using IntelliJ:**  Select "Edit" / "Find" / "Find in Files..." and search for "TODO".  Use the "Open in Find Window" button to place the results in a tab for easy navigation.
+* **Using Eclipse:** Select "Window" / "Show View" / "Tasks".  Use the "Search" view to search for "TODO".  Find a filter icon on the top of this tab.  Check "Show all items", "TODOs".  For scope select "on elements in the selected projects".  The list of TODOs will appear in order!
+
+IMPORTANT: Work through the TODO instructions in numeric order!   
+
+
+== Run the existing test
+
+The current configuration of this lab matches the final state of the previous lab; `@Configuration` classes with `@Bean` methods define all of the application components.  Begin by running a test to verify this state.
+
+==== TODO-01: Open `src/test/java/com.example.RegisterTest.java`.  Run the test, it should pass.
+
+== Alter the existing configuration
+==== Open `src/main/java/com.example.Config.java`.
+==== TODO-02: Comment out the `@Bean`` definitions in this class.  
+
+TIP: To quickly comment out multiple lines in most IDE's, highlight the lines and press Ctrl-/.
+
+==== Re-run the previous test.  It should _fail_ - this is expected at this point.  Do you understand why?
+* The exception encountered should be `NoSuchBeanDefinitionException`.  Within the test class, in the `@BeforeAll` method, you should see code that attempts to retrieve a bean from the `ApplicationContext`, but we have just removed the `@Bean` method which creates it.
+* In the coming steps we will create this bean using annotation-driven configuration.
+
+==== TODO-03:  Add a `@ComponentScan` annotation to the top of the `Config` class.  Set the basePackages attribute to reference the service package.
+[,java]
+----
+@Configuration   
+@ComponentScan(basePackages = "com.example.service")
+public class Config {
+
+----
+
+    * The `@ComponentScan` annotation tells Spring to scan the specified package for classes annotated with `@Component`, `@Service`, `@Repository`,  `@Controller`, or other stereotypes.  Spring will create beans for these classes automatically.
+    * "basePackages" tells Spring where to look for components.  In this case, we are telling Spring to look in the `com.example.service` package and sub-packages.
+
+==== Organize your imports and, save your work.
+
+==== Open `src/main/java/com.example.service.Register.java`.
+
+==== TODO-04:  Add an annotation to this class to define it as a Spring bean.
+* There are several annotations you can choose from, `@Component`, `@Service`, `@Repository`, `@Controller` etc.  Your choice should reflect the purpose of the bean. Since this is not a web controller or database repository, `@Component` or `@Service` would be appropriate.
+[,java]
+----
+@Component
+public class Register {
+----
+
+==== Organize your imports and save your work.
+
+==== Open `src/main/java/com.example.service.SalesTaxCalculator.java`.
+
+==== TODO-05:  Add an annotation to this class to define it as a Spring bean.
+* Use `@Component` or `@Service` as before.
+[,java]
+----
+@Component
+public class SalesTaxCalculator implements TaxCalculator {
+----
+
+==== TODO-06:  Add code to have Spring call the constructor with the tax rate parameter.  Have Spring set the tax rate using an external parameter.
+* When a class has multiple constructors, Spring will use the zero-parameter version if one exists. In our case, we would like it to call the other constructor by annotating it with `@Autowired`.
+* Spring's `Environment` abstraction already reads properties from the `app.properties` file due to the `@PropertySource` annotation in the `Config` class.  We can use `@Value` to inject the property into the constructor parameter.
+* The `@Value` annotation takes a single attribute.  To direct it to obtain a property from the `Environment`, use *${...}* syntax.  The property in `app.properties` is named `tax.rate`, so the full syntax is *@Value("${tax.rate}")* :
+[,java]
+----
+@Autowired
+public SalesTaxCalculator(@Value("${tax.rate}") double rate) {
+    this.rate = rate;
+}
+----
+
+====	Organize your imports, save your work.
+
+==== TODO-07:  Once you have completed alterations to `Config`, `Register`, and `SalesTaxCalculator`, return to the last test you ran.  Run it again.  It should pass.
+* The `@Bean` methods have been replaced with `@Component` classes, and the `@ComponentScan` annotation tells Spring to scan the service package for these classes.
+
+== OPTIONAL: Use `@Profile` to define an alternate tax calculator configuration.
+
+If you have time, there are some improvements we can make to this application.
+
+Some jurisdictions may require us to use a more complex tax calculator, a compound calculator which adds local taxes to the standard tax.  We would like to allow our application to be configured to use either one tax calculator or the other.
+
+
+==== Open `src/main/java/com.example.service.CompoundTaxCalculator.java`.
+
+==== TODO-08:  Add an annotation to this class to define it as a Spring bean.
+* Use `@Component` or `@Service` as before.
+[,java]
+----
+@Component
+public class CompoundTaxCalculator implements TaxCalculator {
+----
+* Now we have two tax calculators, `SalesTaxCalculator` and `CompoundTaxCalculator`.  Spring has no issue with multiple beans of the same type.  However, if we attempt to inject a `TaxCalculator` somewhere, how will Spring behave?
+    * Keep going to find the answer.
+
+
+==== TODO-09: Add `@Value` annotations to populate the constructor parameters based on values in the `app.properties` file.
+* This tax calculator uses two separate tax rates, `tax.rate` and `local.tax.rate`.  Use `@Value` to inject these values into the constructor parameters.
+* Since there is only one constructor, `@Autowired` is not needed.
+[,java]
+----
+public CompoundTaxCalculator(
+    @Value("${tax.rate}") double rate, 
+    @Value("${local.tax.rate}") double localRate) {
+        this.rate = rate;
+        this.localRate = localRate;
+}
+----
+
+==== TODO-10: Organize imports, save your work.
+
+==== Run the test `RegisterTest` again.  It should FAIL.
+* Find the root cause of this exception: when Spring attempts to inject a `TaxCalculator` into the `Register` class, it finds two candidates.  Spring does not know which one to use. We will fix this in a moment.
+
+==== Open `src/test/java/com.example.service.RegisterCompoundTest.java`.
+
+==== TODO-11: This test is designed to test the `Register` class using only one tax calculator, the `CompoundTaxCalculator`.  To do this, we will use `@Profile`
+* Within the `setup()` method, before instantiating the `ApplicationContext`, add a line of code to set a JVM system property to activate the `compound` profile. To set JVM system properties within code, use `System.setProperty()`. The property to set is *spring.profiles.active*, and we will define a new provile called *compound* to represent the use of the compound tax calculator.
+* Add this line of code before the line which instantiates the `AnnotationConfigApplicationContext`.
+[,java]
+----
+    System.setProperty("spring.profiles.active", "compound");
+----
+
+==== Return to the `CompoundTaxCalculator` class and add a `@Profile` annotation to the class.
+    * Use *compound* as the profile name.
+    * Organize imports and save your work.
+[,java]
+----
+@Component
+@Profile("compound")
+public class CompoundTaxCalculator implements TaxCalculator {
+----
+
+==== TODO-12: Back in the `RegisterCompoundTest` remove the `@Disabled` annotation from the test method.
+* `@Disabled` is a JUnit annotation used to temporarily disable a test.  We use it to simplify the lab by avoiding distracting test failures until we reach a specific point in the lab steps.
+
+==== Run the test.  We still encounter a FAILURE.
+* We still encounter two `TaxCalculator` beans.  How can this be?  We explicitly assigned the `CompoundTaxCalculator` to the *compound* profile, and we explicitly activated the *compound* profile.  Why is  the `SalesTaxCalculator` still being considered?
+* Try to determine the cause of this issue before moving to the next step.
+
+==== TODO-13:  Add a `@Profile` annotation to the `SalesTaxCalculator` class.
+* Although we have assigned `CompoundTaxCalculator` to the *compound* profile, the `SalesTaxCalculator` belongs to the *default* profile.  *Default* profile beans are always instantiated.
+* We need to use `@Profile` to activate `SalesTaxCalculator` *only when compound is NOT active*.
+* Add `@Profile("!compound")` to the `SalesTaxCalculator` class.
+[,java]
+----
+@Component
+@Profile("!compound")
+public class SalesTaxCalculator implements TaxCalculator {
+----
+
+==== Organize all imports and save all work. Re-run the `RegisterCompoundTest`.  It should now pass.
+==== Re-run the `RegisterTest` test.  It should also pass.
+
+
+== Review
+
+In this lab we learned:
+
+* Spring Beans can be defined either with `@Bean` methods in a `@Configuration` class, or with `@Component`, `@Service`, `@Repository`, or `@Controller` annotations.
+* The `@ComponentScan` annotation tells Spring where to look for components.
+* `@Autowired` can be used to select a specific constructor when a class has multiple constructors.
+* The `@Value` annotation can be used to inject properties into a bean.
+* `@Profile` can be used to define alternate configurations for different environments.
+

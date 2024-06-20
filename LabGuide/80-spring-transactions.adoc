@@ -1,0 +1,160 @@
+﻿
+= Spring Fundamentals, Transaction Management
+:sectnums:
+
+Spring provides a declarative approach to transaction management, separating implementation from demarcation.  This allows your code to enjoy the benefits of transaction management without being coupled to a specific implementation.
+
+Within the codebase you will find ordered *TODO* comments that describe what actions to take for each step.  By finding all files containing *TODO*, and working on the steps in numeric order, it is possible to complete this exercise without looking at the instructions.  If you do need guidance, you can always look at these instructions for full information.  Just be sure to perform the *TODO* steps in order.
+
+Solution code is provided for you in a separate folder, so you can compare your work if needed.  For maximum benefit, try to complete the lab without looking at the solution.
+
+
+== Open the project, Configure the `PlatformTransactionManager`.
+
+==== Use your IDE to open `C:\LabFiles\80-spring-transactions` (adjust this location as needed).
+
+==== TODO-01: Open `src/main/java/com.example.Config.java`.  Add an annotation to this class to enable Spring transaction management.
+. Spring's transaction management is not enabled by default, but it is easy to switch on.
+. Use `@EnableTransactionManagement`.
+[source,java]
+----
+@EnableTransactionManagement
+@Configuration   
+@PropertySource("classpath:app.properties")
+@ComponentScan("com.example")
+public class Config {
+----
+* This annotation tells Spring to look for beans with `@Transactional` annotations and create proxies to add transactional behavior to these beans.
+
+==== TODO-02: Define a `PlatformTransactionManager` bean.
+. Name the bean `transactionManager`.
+. The type of the bean should be `PlatformTransactionManager`.
+. The bean method should accept a `DataSource` parameter.
+. Instantiate and return a `DataSourceTransactionManager`, injecting it with the `DataSource` parameter.
+[source,java]
+----
+    @Bean
+    public PlatformTransactionManager transactionManager(DataSource dataSource) {
+        return new DataSourceTransactionManager(dataSource);
+    }
+----
+
+== Make the `PurchaseServiceImpl` Transactional
+
+==== TODO-03: Open `src/main/java/com.example.service.PurchaseServiceImpl.java`.  Make the methods in this bean transactional.
+. Add an annotation to this bean to make all methods transactional.
+. Be sure to import the annotation from `org.springframework...`.
+[source,java]
+----
+@Service
+@Transactional
+public class PurchaseServiceImpl implements PurchaseService {
+----
+When the Spring ApplicationContext starts, it will recognize the `@Transactional` annotation and create a proxy around the `PurchaseServiceImpl` bean.  This proxy will intercept method calls, adding transactional behavior (begin, commit, rollback) to each method.
+
+== Test the Transactional Behavior
+
+==== TODO-04: Open `src/test/java/com.example.service.PurchaseServiceImplTests.java`.  Annotate this class to make it a Spring test class.
+* Include the configuration class you wish to load.
+[source,java]
+----
+@SpringJUnitConfig(Config.class)
+public class PurchaseServiceImplTests {
+----
+
+==== TODO-05: Have Spring inject a `PurchaseService` into this class.
+* Use the `@Autowired` annotation.
+[source,java]
+----
+    @Autowired PurchaseService purchaseService;
+----
+
+==== TODO-06: Have Spring inject the `PlatformTransactionManager` into this class.
+* Use the `@Autowired` annotation.
+* Ordinarily, we do not use the transactionManager directly in our code, but here we will use it to manually control transactions to explore how the the `PurchaseServiceImpl` transactional behavior works.
+[source,java]
+----
+    @Autowired PlatformTransactionManager transactionManager;
+----
+
+==== TODO-07: Remove the `@Disabled` annotation from the `testSavePurchase` method.  Observe the code that starts a transaction.
+* The `@Disabled` annotation is used to temporarily bypass a test.
+* The `getTransaction` method of the `PlatformTransactionManager` is used to manually start a transaction.
+* Our goal is to verify that the transaction defined in `PurchaseServiceImpl`is able to work independently of any other transactions occurring simultaneously.
+* You do not need to make any changes to this code, just understand what it is doing.
+[source,java]
+----
+        //  Manually start a transaction.
+		TransactionStatus status = 
+            transactionManager.getTransaction(
+                new DefaultTransactionDefinition());
+----
+
+==== TODO-08: Observe the test logic.
+* We are creating a test `Purchase` object.
+* The `Purchase` object will be saved using the `PurchaseService`.
+* No changes are needed here, move on to the next step.
+[source,java]
+----
+        Purchase p = new Purchase("Praveen", new Date(), "lava lamp");
+----
+
+==== TODO-09: Call the method on the `PurchaseService` to save the `Purchase` object.  Pass in the `Purchase` object defined above.
+[source,java]
+----
+        purchaseService.savePurchase(p);
+----
+
+==== TODO-10: Observe the rollback code.  
+* The `transactionManager` is used to rollback the transaction.
+* Consider: will this rollback the affect the previous save operation or not?
+    . The `@Transactional` annotation on `PurchaseServiceImpl` adds transactional behavior to each method, including `savePurchase()`.
+    . However, our test logic has already started a transaction before calling `savePurchase()`.
+    . Will this result in one single transaction that is rolled back, or will  `savePurchase()` have a separate transaction?
+* There is nothing you need to code here, move on to the next step.
+[source,java]
+----
+		transactionManager.rollback(status);
+----
+
+==== TODO-11: Within the try / catch block, call the `findPurchase()` method on the `PurchaseService` to retrieve what was just saved.
+* The `findPurchase` method takes two parameters: the customer name and the purchase date.  Use the values from the test data created above.
+* Assign the result to the `retrievedPurchase` variable.
+[source,java]
+----
+        retrievedPurchase = 
+            purchaseService.findPurchase(
+                p.getCustomerName(),
+                p.getPurchaseDate());
+----
+
+==== TODO-12: Observe the assertions.  They verify the purchase was saved properly.  Organize imports and save your work.  Run this test.  Initially it will *FAIL*.  Do you understand why?
+* The rollback logic has rolled back the `Purchase` object that was saved.  Did you expect this?
+* Recall that the default propagation behavior of `@Transactional` methods is *required*.  This means if a transaction already exists, the method will join it.  The single transaction was rolled back by the test logic.
+* This is expected.  In the next step, we will change the transaction propagation behavior to *requires_new* to see how this affects the test.
+
+== Change the Transaction Propagation Behavior
+
+==== TODO-13: Return to `src/main/java/com.example.service.PurchaseServiceImpl.java`.  Override the transaction propagation behavior on the `savePurchase()` method.
+* Add a `@Transactional` annotation to the `savePurchase` method.  Method-level annotations override class-level annotations.
+* Set the `propagation` attribute to `Propagation.REQUIRES_NEW`.
+* This will require a new transaction to be started when the `savePurchase` method is called.
+[source,java]
+----
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void savePurchase(Purchase purchase) {
+----
+* Now a new transaction will begin when this method is called, regardless of whether one is already in progress.  The inner transaction will be committed or rolled back independently of any outer transaction.
+
+==== TODO-14: Organize imports, save your work. Return to the previous test.  Run it again.  It should pass.
+* The `savePurchase` method is now in its own transaction.  The rollback logic in the test will not affect it.
+
+== Review
+In this lab we learned:
+
+* How to enable Spring transaction management.
+* How to define a `PlatformTransactionManager` bean.
+* How to make methods in a bean transactional.
+* How to manually control transactions in a test.
+* How to change the transaction propagation behavior of a method.
+
