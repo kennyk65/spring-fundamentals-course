@@ -24,7 +24,7 @@ public class PurchaseDaoImplTests {
     //  TODO-13: Examine the test logic in the following method.
     //  It retrieves all purchases, then asserts that there are multiple purchases.
     //  It also asserts that the first purchase has its properties mapped;
-    //  This verifies that the BeanPropertyRowMapper is working.
+    //  This verifies that the property mapping is working.
     //  Remove the @Disabled annotation.  Run this test, it should pass.
     @Test
     //@Disabled

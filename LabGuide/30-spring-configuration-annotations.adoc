@@ -116,7 +116,7 @@ public class CompoundSalesTaxCalculator implements TaxCalculator {
     * Keep going to find the answer.
 
 
-==== TODO-09: Add `@Value` annotations to populate the constructor parameters based on values in the `app.properties` file.
+==== TODO-09: Add `@Value` annotations to populate the two constructor parameters based on values in the `app.properties` file.
 * This tax calculator uses two separate tax rates, `tax.rate` and `local.tax.rate`.  Use `@Value` to inject these values into the constructor parameters.
 * Since there is only one constructor, `@Autowired` is not needed.
 [,java]

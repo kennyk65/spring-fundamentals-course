@@ -17,8 +17,8 @@ public class CompoundSalesTaxCalculator implements TaxCalculator {
 	private final double taxRate;	// default rate
 	private final double localTaxRate;	// default rate
 
-	//  TODO-09:  (OPTIONAL) Add @Value annotations to populate 
-	//	the constructor parameters based on values in the app.properties file.
+	//  TODO-09:  (OPTIONAL) Add @Value annotations to populate the constructor parameters.  
+	//	The parameter keys can be found in the app.properties file.
     public CompoundSalesTaxCalculator(
 		@Value("${tax.rate}") double taxRate,
 		@Value("${local.tax.rate}") double localTaxRate) {

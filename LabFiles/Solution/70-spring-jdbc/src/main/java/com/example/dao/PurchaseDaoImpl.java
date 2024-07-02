@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
@@ -23,8 +22,8 @@ public class PurchaseDaoImpl implements PurchaseDao {
 	//	Use the jdbcClient to retrieve purchases from the DB:
 	//  - The provided SQL retrieves all rows from the PURCHASE table.
 	//  - Utilize the ".sql" method to specify the SQL statement.
-	//  - Utilize the ".query" method to specify a RowMapper.
-	//	  - Use a new BeanPropertyRowMapper<Purchase>(Purchase.class) to easily map columns to Purchase properties.
+	//  - Utilize the ".query" method to specify row mapping.
+	//	  - Specify Purchase.class to easily map columns to Purchase properties.
 	//	- The goal is to return a List of Purchase objects.
 	@Override
 	public List<Purchase> getAllPurchases() {
@@ -33,7 +32,7 @@ public class PurchaseDaoImpl implements PurchaseDao {
 		//return null;
 		return jdbcClient
 			.sql(sql)
-			.query(new BeanPropertyRowMapper<Purchase>(Purchase.class))
+			.query(Purchase.class)
 			.list();
 	}
 
@@ -42,8 +41,8 @@ public class PurchaseDaoImpl implements PurchaseDao {
 	//  - The provided SQL retrieves all rows from the PURCHASE table.
 	//  - Utilize the ".sql" method to specify the SQL statement.
 	//  - Utilize the ".param" method to specify the id parameter.
-	//  - Utilize the ".query" method to specify a RowMapper.
-	//	  - Use a new BeanPropertyRowMapper<Purchase>(Purchase.class) to easily map columns to Purchase properties.
+	//  - Utilize the ".query" method to specify row mapping.
+	//	  - Specify Purchase.class to easily map columns to Purchase properties.
 	//	The goal is to return a single Purchase object.
 	@Override
 	public Purchase getPurchase(int id) {
@@ -53,7 +52,7 @@ public class PurchaseDaoImpl implements PurchaseDao {
 		return jdbcClient
 			.sql(sql)
 			.param(id)
-			.query(new BeanPropertyRowMapper<Purchase>(Purchase.class))
+			.query(Purchase.class)
 			.single();
 	}
 
@@ -82,7 +81,7 @@ public class PurchaseDaoImpl implements PurchaseDao {
 			.sql(sql)
 			.param(name)
 			.param(date)
-			.query(new BeanPropertyRowMapper<Purchase>(Purchase.class))
+			.query(Purchase.class)
 			.single();
 	}
 
