@@ -63,9 +63,7 @@ public class Config {
 
 ==== Organize your imports and, save your work.
 
-==== Open `src/main/java/com.example.service.Register.java`.
-
-==== TODO-04:  Add an annotation to this class to define it as a Spring bean.
+==== TODO-04:  Open `src/main/java/com.example.service.Register.java`. Add an annotation to this class to define it as a Spring bean.
 * There are several annotations you can choose from, `@Component`, `@Service`, `@Repository`, `@Controller` etc.  Your choice should reflect the purpose of the bean. Since this is not a web controller or database repository, `@Component` or `@Service` would be appropriate.
 [,java]
 ----
@@ -75,9 +73,8 @@ public class Register {
 
 ==== Organize your imports and save your work.
 
-==== Open `src/main/java/com.example.service.SalesTaxCalculator.java`.
 
-==== TODO-05:  Add an annotation to this class to define it as a Spring bean.
+==== TODO-05:  Open `src/main/java/com.example.service.SalesTaxCalculator.java`.  Add an annotation to this class to define it as a Spring bean.
 * Use `@Component` or `@Service` as before.
 [,java]
 ----
@@ -108,17 +105,14 @@ If you have time, there are some improvements we can make to this application.
 
 Some jurisdictions may require us to use a more complex tax calculator, a compound calculator which adds local taxes to the standard tax.  We would like to allow our application to be configured to use either one tax calculator or the other.
 
-
-==== Open `src/main/java/com.example.service.CompoundTaxCalculator.java`.
-
-==== TODO-08:  Add an annotation to this class to define it as a Spring bean.
+==== TODO-08:  Open `src/main/java/com.example.service.CompoundSalesTaxCalculator.java`. Add an annotation to this class to define it as a Spring bean.
 * Use `@Component` or `@Service` as before.
 [,java]
 ----
 @Component
-public class CompoundTaxCalculator implements TaxCalculator {
+public class CompoundSalesTaxCalculator implements TaxCalculator {
 ----
-* Now we have two tax calculators, `SalesTaxCalculator` and `CompoundTaxCalculator`.  Spring has no issue with multiple beans of the same type.  However, if we attempt to inject a `TaxCalculator` somewhere, how will Spring behave?
+* Now we have two tax calculators, `SalesTaxCalculator` and `CompoundSalesTaxCalculator`.  Spring has no issue with multiple beans of the same type.  However, if we attempt to inject a `TaxCalculator` somewhere, how will Spring behave?
     * Keep going to find the answer.
 
 
@@ -127,7 +121,7 @@ public class CompoundTaxCalculator implements TaxCalculator {
 * Since there is only one constructor, `@Autowired` is not needed.
 [,java]
 ----
-public CompoundTaxCalculator(
+public CompoundSalesTaxCalculator(
     @Value("${tax.rate}") double rate, 
     @Value("${local.tax.rate}") double localRate) {
         this.rate = rate;
@@ -140,36 +134,35 @@ public CompoundTaxCalculator(
 ==== Run the test `RegisterTest` again.  It should FAIL.
 * Find the root cause of this exception: when Spring attempts to inject a `TaxCalculator` into the `Register` class, it finds two candidates.  Spring does not know which one to use. We will fix this in a moment.
 
-==== Open `src/test/java/com.example.service.RegisterCompoundTest.java`.
-
-==== TODO-11: This test is designed to test the `Register` class using only one tax calculator, the `CompoundTaxCalculator`.  To do this, we will use `@Profile`
-* Within the `setup()` method, before instantiating the `ApplicationContext`, add a line of code to set a JVM system property to activate the `compound` profile. To set JVM system properties within code, use `System.setProperty()`. The property to set is *spring.profiles.active*, and we will define a new provile called *compound* to represent the use of the compound tax calculator.
+==== TODO-11: Open `src/test/java/com.example.service.RegisterCompoundTest.java`. This test is designed to test the `Register` class using only one tax calculator, the `CompoundSalesTaxCalculator`.  To do this, we will use `@Profile`
+* Within the `setup()` method, before instantiating the `ApplicationContext`, add a line of code to set a JVM system property to activate the `compound` profile. To set JVM system properties within code, use `System.setProperty()`. The property to set is *spring.profiles.active*, and we will define a new profile called *compound* to represent the use of the compound sales tax calculator.
 * Add this line of code before the line which instantiates the `AnnotationConfigApplicationContext`.
 [,java]
 ----
     System.setProperty("spring.profiles.active", "compound");
 ----
 
-==== Return to the `CompoundTaxCalculator` class and add a `@Profile` annotation to the class.
+==== Return to the `CompoundSalesTaxCalculator` class and add a `@Profile` annotation to the class.
     * Use *compound* as the profile name.
     * Organize imports and save your work.
 [,java]
 ----
 @Component
 @Profile("compound")
-public class CompoundTaxCalculator implements TaxCalculator {
+public class CompoundSalesTaxCalculator implements TaxCalculator {
 ----
 
 ==== TODO-12: Back in the `RegisterCompoundTest` remove the `@Disabled` annotation from the test method.
 * `@Disabled` is a JUnit annotation used to temporarily disable a test.  We use it to simplify the lab by avoiding distracting test failures until we reach a specific point in the lab steps.
 
+
 ==== Run the test.  We still encounter a FAILURE.
-* We still encounter two `TaxCalculator` beans.  How can this be?  We explicitly assigned the `CompoundTaxCalculator` to the *compound* profile, and we explicitly activated the *compound* profile.  Why is  the `SalesTaxCalculator` still being considered?
+* We still encounter two `TaxCalculator` beans.  How can this be?  We explicitly assigned the `CompoundSalesTaxCalculator` to the *compound* profile, and we explicitly activated the *compound* profile.  Why is  the `SalesTaxCalculator` still being considered?
 * Try to determine the cause of this issue before moving to the next step.
 
-==== TODO-13:  Add a `@Profile` annotation to the `SalesTaxCalculator` class.
-* Although we have assigned `CompoundTaxCalculator` to the *compound* profile, the `SalesTaxCalculator` belongs to the *default* profile.  *Default* profile beans are always instantiated.
-* We need to use `@Profile` to activate `SalesTaxCalculator` *only when compound is NOT active*.
+==== TODO-13:  Return to the `SalesTaxCalculator` class.  Add a `@Profile` annotation to assign it to the "!compound" profile.
+* Although we have assigned `CompoundSalesTaxCalculator` to the *compound* profile, the `SalesTaxCalculator` still belongs to the *default* profile.  *Default* profile beans are always instantiated.
+* We need to use `@Profile` to activate `SalesTaxCalculator` *only when compound is NOT active* so the beans are mutually exclusive.
 * Add `@Profile("!compound")` to the `SalesTaxCalculator` class.
 [,java]
 ----

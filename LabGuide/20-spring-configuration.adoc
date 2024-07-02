@@ -17,12 +17,6 @@ If you have time, there is an optional challenge to work with `@Profile`, `@Prop
 * If you see a message about installing “Extension Pack for Java”, take the install option.
 * If you see a message "Do you trust the authors of the files in this folder", check the checkbox and click the "trust" button.
 
-==== VS Code *should* recognize the project as a Gradle project and automatically import it. If it does not and you see build or compilation errors, you may need to manually import it:
-
-* Open the Command Palette (Ctrl+Shift+P or Cmd+Shift+P on macOS).
-* Type "Gradle: Import Gradle Project" and select it.
-* Navigate to the project directory and select the build.gradle file.
-* Click "Open".
 
 == Run your application
 
@@ -133,15 +127,27 @@ Whatever we code, we should test.  Our next test will verify that our alternativ
 
 ==== Open src/test/java *com.example.service.AlternateRegisterTest.java*.
 
-==== TODO-16: Within th `setup()` method, set a Java system property *spring.profiles.active* to the value *alternate*.
+==== TODO-16: Within the `setup()` method, set a Java system property _spring.profiles.active_ to the value _alternate_.
 * Use `System.setProperty()` to set the property.
 * When the Spring context is created, it will activate the *alternate* profile.
 
-==== TODO-17: Write a @Test method to verify the computeTotal method.
+==== TODO-17: Still within the `setup()` method, after the system property has been set, instantiate the `ApplicationContext` using `AnnotationConfigApplicationContext`.
+. You can look at the code you just finished in App.java or RegisterTest.java for guidance.
+. Retrieve the `Register` bean from the ApplicationContext.  Notice that a static variable has already been provided to hold this:
+
+[source,java]
+----
+ApplicationContext spring = 
+    new AnnotationConfigApplicationContext(AlternateConfig.class);
+register = spring.getBean(Register.class);        
+----
+
+
+==== TODO-18: Write a @Test method to verify the computeTotal method.
 . Use your previous test method as a guide.  
 . Adjust the logic to assert the total based on the configured tax.rate.
 
-==== TODO-18: Organize your imports, save your work.  Run the test, it should pass.
+==== TODO-19: Organize your imports, save your work.  Run the test, it should pass.
 
 == Summary
 You have just gained practice creating Spring configuration classes and beans.  You have applied dependency injection and tested all your work.  

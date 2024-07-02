@@ -29,4 +29,17 @@ public class SalesTaxCalculator implements TaxCalculator {
 	public double calculateTax(double amount) {
 		return amount * taxRate;
 	}	
+
+
+
+
+
+
+
+
+    //  TODO-13: (OPTIONAL) The two TaxCalculator beans should be mutually exclusive.
+    //  Add a @Profile("!compound") annotation to this SalesTaxCalculator class.
+    //  Organize imports, save work, re-run the RegisterCompoundTest.  It should PASS.
+    //  Be sure that the original RegisterTest still passes as well.
+
 }

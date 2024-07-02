@@ -31,4 +31,8 @@ class AlternateRegisterTest {
     //  TODO-18: (OPTIONAL) Write a @Test method to verify the computeTotal method.
     //  Use your previous test method as a guide.  However,
     //  adjust the logic to assert the total based on the configured tax.rate.
+
+
+
+    //  TODO-19: (OPTIONAL) Organize your imports, save your work.  Run the test, it should pass.
 }

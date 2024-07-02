@@ -36,7 +36,7 @@ The `@EnableAspectJAutoProxy` annotation serves as a master switch to enable AOP
 
 == Build the `LoggingAspect`
 
-==== TODO-03: Open `src/main/java/com.example.as[ect.LoggingAspect.java`.  Annotate this class as an aspect and a component.
+==== TODO-03: Open `src/main/java/com.example.aspect.LoggingAspect.java`.  Annotate this class as an aspect and a component.
 . Add the `@Aspect` annotation to the class.
 . Add the `@Component` annotation to the class.
 [source,java]
@@ -86,10 +86,10 @@ To effectively test the LoggingAspect, we will need to execute methods on beans 
 public class PurchaseDaoImplTests {
 ----
 
-==== TODO-08: Inject a `PurchaseService` object.
+==== TODO-08: Inject a `PurchaseDao` object.
 [source,java]
 ----
-@Autowired PurchaseService service;
+@Autowired PurchaseDao dao;
 ----
 
 ==== TODO-09: Organize imports, save your work.

@@ -306,6 +306,7 @@ public class PurchaseDaoImplTests {
 ----
 
 ==== TODO 19: Implement the `savePurchase` test method.
+. Remove the `@Disabled` annotation.
 . Note the existing logic using `EntityManager` `find` to get an existing `Customer`. (We want to try adding a new `Purchase` to an existing `Customer`.)
 . Note the existing `Purchase` object created for test data.  Change these values if you like.  Important: notice how the `Customer` property is set to the `Customer` object just retrieved; this establishes the foreign key relationship.
 . Use the `PurchaseDao` to save the `Purchase`.
@@ -317,6 +318,7 @@ public class PurchaseDaoImplTests {
 [source,java]
 ----
     @Test
+    // @Disabled
     public void testSaveAndFind() {
 
         //  Get an existing customer:

@@ -21,7 +21,7 @@ class AlternateRegisterTest {
         //  This Java System Property will activate the "alternate" profile.
         System.setProperty("spring.profiles.active", "alternate");
 
-        //  TODO-17: Instantiate the ApplicationContext using AnnotationConfigApplicationContext.
+        //  TODO-17: (OPTIONAL) Instantiate the ApplicationContext using AnnotationConfigApplicationContext.
         //  (Reference the code you just completed in App.java or RegisterTest.java for guidance.)
         //  Get the Register bean from the ApplicationContext.
         //  Assign the Register bean to the static field.
@@ -38,4 +38,7 @@ class AlternateRegisterTest {
         Assertions.assertThat(
             register.computeTotal(100)).isEqualTo(100.00 + 6.00);
     }
+
+    //  TODO-19: (OPTIONAL) Organize your imports, save your work.  Run the test, it should pass.
+
 }

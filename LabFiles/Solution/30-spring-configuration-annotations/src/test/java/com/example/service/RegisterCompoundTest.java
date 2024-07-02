@@ -44,14 +44,4 @@ class RegisterCompoundTest {
         System.out.println(String.format("The computed total including tax is: %.2f", result));
     }
 
-
-
-    //  TODO-13: (OPTIONAL) The two TaxCalculator beans should be mutually exclusive.
-    //  Add a @Profile("!compound") annotation to the SalesTaxCalculator class.
-    //  Organize imports, save work, re-run this test.  It should PASS.
-    //  Be sure that the original RegisterTest still passes as well.
-
-
-
-
 }

@@ -32,8 +32,8 @@ public class RegisterCompoundTest {
     @Test 
     void testRegister() {
         double result = register.computeTotal(100);
-//        Assertions.assertThat(result).isEqualTo(100.00 + 8.50);
-        Assertions.assertThat(result).isEqualTo(100.00 + 7.0);
+        Assertions.assertThat(result).isEqualTo(100.00 + 8.50);
+        // Assertions.assertThat(result).isEqualTo(100.00 + 7.0);
         System.out.println(String.format("The computed total including tax is: %.2f", result));
     }
 

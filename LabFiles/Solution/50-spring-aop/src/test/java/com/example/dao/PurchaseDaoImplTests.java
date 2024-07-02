@@ -14,7 +14,7 @@ import com.example.domain.Purchase;
 @SpringJUnitConfig(Config.class)
 public class PurchaseDaoImplTests {
 
-    // TODO-08: Have Spring inject a PurchaseService into this class.
+    // TODO-08: Have Spring inject a PurchaseDao into this class.
     // PurchaseDao dao;
     @Autowired PurchaseDao dao;
 
