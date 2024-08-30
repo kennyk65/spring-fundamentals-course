@@ -11,14 +11,13 @@ Solution code is provided for you in a separate folder, so you can compare your 
 
 IMPORTANT: If you haven't installed the “Extension Pack for Java” (Microsoft) and “Gradle for Java” extensions yet, you can do so from the Extensions view (Ctrl+Shift+X or Cmd+Shift+X on macOS) by searching for name of the extension and clicking "Install".
 
-==== Inside VSCode, use File / Open Folder... and select the `C:\LabFiles` folder (or wherever you have located your lab files).
-* If you see a message "Do you trust the authors of the files in this folder", check the checkbox and click the "trust" button..
+==== Open VSCode.
 
 ==== Use Ctrl-Shift-P to open the `Command  Palette`.
 
 ==== Type "gradle".  Select _Gradle: Create a Gradle Java Project (Advanced)_  .
 
-. You will be prompted to select a folder.  Look for an option to create a "new folder".  Call the folder *10-spring-intro*.  Select this folder.
+. You will be prompted to select a folder.  Select *C:\LabFiles\10-spring-intro*. Adjust the location if your lab files are located elsewhere.  Create this folder if it does not exist.
 
 . For project type, select *application*.
 
@@ -29,11 +28,12 @@ IMPORTANT: If you haven't installed the “Extension Pack for Java” (Microsoft
 . For the name of your project, select *10-spring-intro*.
 
 . For package name, type *com.example*
+    * Give Gradle a moment to generate the project.  
 
-
+. Once the project is generated, you will receive a message equivalent to _Gradle project [10-spring-intro] is created under: c:\LabFiles\10-spring-intro._  Click the "Open" button.
 * If you see a message about enabling null analysis for the project, you can select either enable or disable.
 * If you see a message about installing “Extension Pack for Java”, take the install option.
-
+* If you see a message "Do you trust the authors of the files in this folder", check the checkbox and click the "trust" button.
 
 == Run your application
 
@@ -88,6 +88,7 @@ TIP: Later when using Spring Boot, we will only need to add a single dependency.
 [source,gradle]
 ----
 
+
 dependencies {
     implementation "org.springframework:spring-core:6.1.8"  
     implementation 'org.springframework:spring-context:6.1.8'  
@@ -96,6 +97,7 @@ dependencies {
 }
 
 ----
+
 These dependencies are the absolute minimum needed to use Spring and run basic JUnit tests.  AssertJ is commonly used in JUnit test cases.  We will add more dependencies later.
 
 ==== Save your work.
@@ -207,6 +209,7 @@ class AppTest {
 ==== Add a setup method annotated with @BeforeAll.  Within, write the following code (use the App.java code as a guide):
 . Create an ApplicationContext using the Config class.
 . Retrieve the greetingBean from the context and assign it to the greetingBean *static variable*.
+
 ----
     @BeforeAll
     public static void setup() {
